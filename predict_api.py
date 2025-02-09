@@ -1,16 +1,40 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import numpy as np
+import os
 from pydantic import BaseModel
 
-# Load Trained Model and Encoders
-model = joblib.load(r"B:\predictive_main_bosch_data\predictive_maintenance_model.pkl")
-le_type = joblib.load(r"B:\predictive_main_bosch_data\type_label_encoder.pkl")
-le_failure = joblib.load(r"B:\predictive_main_bosch_data\failure_label_encoder.pkl")
-scaler = joblib.load(r"B:\predictive_main_bosch_data\feature_scaler.pkl")
+# Define paths for model and encoders
+BASE_DIR = os.path.dirname(__file__)
+model_path = os.path.join(BASE_DIR, "predictive_maintenance_model.pkl")
+type_encoder_path = os.path.join(BASE_DIR, "type_label_encoder.pkl")
+failure_encoder_path = os.path.join(BASE_DIR, "failure_label_encoder.pkl")
+scaler_path = os.path.join(BASE_DIR, "feature_scaler.pkl")
+
+# Load Model and Encoders (Handle missing files)
+def load_model(path):
+    if os.path.exists(path):
+        return joblib.load(path)
+    else:
+        raise FileNotFoundError(f"❌ Missing file: {path}")
+
+model = load_model(model_path)
+le_type = load_model(type_encoder_path)
+le_failure = load_model(failure_encoder_path)
+scaler = load_model(scaler_path)
 
 # Initialize FastAPI
 app = FastAPI(title="Predictive Maintenance API", description="🚀 Predict machine failures using AI!")
+
+# Enable CORS for frontend integration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Input Schema
 class SensorData(BaseModel):
